@@ -1,6 +1,13 @@
 # DevOps CI Assignment — Integration Test Pipeline
 [![CI](https://github.com/5cr4b/devops-integration-test/actions/workflows/ci-integration-test.yml/badge.svg)](https://github.com/5cr4b/devops-integration-test/actions/workflows/ci-integration-test.yml)
 
+Pipeline success: 
+https://github.com/5cr4b/devops-integration-test/actions/runs/27807135859
+https://github.com/5cr4b/devops-integration-test/actions/runs/27807372745
+
+Pipelien fail: 
+https://github.com/5cr4b/devops-integration-test/actions/runs/27807300937
+
 ## 0. Pre-Assessment Questionnaire
 
 1. **CI platform:** GitHub Actions
