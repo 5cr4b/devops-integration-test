@@ -166,11 +166,14 @@ jobs:
           helm repo add bitnami https://charts.bitnami.com/bitnami
           helm repo update
 
-          # Extract image refs from chart templates
+          # Extract image refs from chart templates (handles both quoted and unquoted)
           PG_IMAGES=$(helm template pg bitnami/postgresql --version "${POSTGRES_CHART_VERSION}" \
-            --set auth.password=dummy 2>/dev/null | grep -oP 'image:\s*"\K[^"]+' | sort -u)
+            --set auth.password=dummy 2>/dev/null | grep -E '^\s+image:' | sed 's/.*image:\s*//;s/"//g;s/'"'"'//g' | tr -d ' ' | sort -u)
           REDIS_IMAGES=$(helm template rd bitnami/redis --version "${REDIS_CHART_VERSION}" \
-            --set auth.password=dummy --set architecture=standalone 2>/dev/null | grep -oP 'image:\s*"\K[^"]+' | sort -u)
+            --set auth.password=dummy --set architecture=standalone 2>/dev/null | grep -E '^\s+image:' | sed 's/.*image:\s*//;s/"//g;s/'"'"'//g' | tr -d ' ' | sort -u)
+
+          echo "PostgreSQL images: ${PG_IMAGES}"
+          echo "Redis images: ${REDIS_IMAGES}"
 
           # Pull on runner (fast — direct Docker Hub access) then load into Kind
           for img in ${PG_IMAGES} ${REDIS_IMAGES}; do
