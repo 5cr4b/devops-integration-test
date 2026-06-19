@@ -13,6 +13,15 @@ on:
         options:
           - "false"
           - "true"
+      runner_type:
+        description: "Runner type"
+        required: false
+        default: "github-hosted"
+        type: choice
+        options:
+          - "github-hosted"
+          - "self-hosted"
+          - "custom-image"
 
 permissions:
   contents: read
@@ -22,8 +31,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  kind-integration-ci:
-    name: Kind Integration CI
+  integration-ci:
+    name: Integration CI
     uses: ./.github/workflows/reusable-kind-integration-ci.yml
     with:
       force_fail: ${{ github.event.inputs.force_fail || 'false' }}
+      runner_type: ${{ github.event.inputs.runner_type || 'github-hosted' }}
