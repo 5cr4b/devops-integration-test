@@ -178,8 +178,11 @@ jobs:
           # Pull on runner (fast — direct Docker Hub access) then load into Kind
           for img in ${PG_IMAGES} ${REDIS_IMAGES}; do
             echo "Pulling: ${img}"
-            docker pull "${img}"
-            kind load docker-image "${img}" --name "${CLUSTER_NAME}"
+            if docker pull "${img}"; then
+              kind load docker-image "${img}" --name "${CLUSTER_NAME}"
+            else
+              echo "::warning::Failed to pre-pull ${img} — Kind will pull on deploy (slower)"
+            fi
           done
 
       - name: Deploy PostgreSQL
@@ -193,7 +196,7 @@ jobs:
             --set auth.password="${POSTGRES_PASSWORD}" \
             --set primary.persistence.enabled=false \
             --wait \
-            --timeout 5m
+            --timeout 10m
           kubectl wait --namespace "${NAMESPACE}" \
             --for=condition=ready pod \
             --selector app.kubernetes.io/instance="${POSTGRES_RELEASE_NAME}" \
@@ -209,7 +212,7 @@ jobs:
             --set auth.password="${REDIS_PASSWORD}" \
             --set master.persistence.enabled=false \
             --wait \
-            --timeout 5m
+            --timeout 10m
           kubectl wait --namespace "${NAMESPACE}" \
             --for=condition=ready pod \
             --selector app.kubernetes.io/instance="${REDIS_RELEASE_NAME}" \

@@ -1,4 +1,5 @@
 # DevOps CI Assignment — Integration Test Pipeline
+[![CI](https://github.com/5cr4b/devops-integration-test/actions/workflows/ci-integration-test.yml/badge.svg)](https://github.com/5cr4b/devops-integration-test/actions/workflows/ci-integration-test.yml)
 
 ## 0. Pre-Assessment Questionnaire
 
