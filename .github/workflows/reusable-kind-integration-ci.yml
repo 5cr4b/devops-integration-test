@@ -166,17 +166,14 @@ jobs:
           helm repo add bitnami https://charts.bitnami.com/bitnami
           helm repo update
 
-          # Extract image refs from chart templates (handles both quoted and unquoted)
-          PG_IMAGES=$(helm template pg bitnami/postgresql --version "${POSTGRES_CHART_VERSION}" \
-            --set auth.password=dummy 2>/dev/null | grep -E '^\s+image:' | sed 's/.*image:\s*//;s/"//g;s/'"'"'//g' | tr -d ' ' | sort -u)
-          REDIS_IMAGES=$(helm template rd bitnami/redis --version "${REDIS_CHART_VERSION}" \
-            --set auth.password=dummy --set architecture=standalone 2>/dev/null | grep -E '^\s+image:' | sed 's/.*image:\s*//;s/"//g;s/'"'"'//g' | tr -d ' ' | sort -u)
+          # Use stable image tags (major version only) — Bitnami removes specific revision tags
+          PG_IMAGE="docker.io/bitnami/postgresql:${POSTGRES_IMAGE_TAG}"
+          REDIS_IMAGE="docker.io/bitnami/redis:${REDIS_IMAGE_TAG}"
 
-          echo "PostgreSQL images: ${PG_IMAGES}"
-          echo "Redis images: ${REDIS_IMAGES}"
+          echo "PostgreSQL image: ${PG_IMAGE}"
+          echo "Redis image: ${REDIS_IMAGE}"
 
-          # Pull on runner (fast — direct Docker Hub access) then load into Kind
-          for img in ${PG_IMAGES} ${REDIS_IMAGES}; do
+          for img in "${PG_IMAGE}" "${REDIS_IMAGE}"; do
             echo "Pulling: ${img}"
             if docker pull "${img}"; then
               kind load docker-image "${img}" --name "${CLUSTER_NAME}"
@@ -195,6 +192,7 @@ jobs:
             --set auth.username="${POSTGRES_USER}" \
             --set auth.password="${POSTGRES_PASSWORD}" \
             --set primary.persistence.enabled=false \
+            --set image.tag="${POSTGRES_IMAGE_TAG}" \
             --wait \
             --timeout 10m
           kubectl wait --namespace "${NAMESPACE}" \
@@ -211,6 +209,7 @@ jobs:
             --set architecture=standalone \
             --set auth.password="${REDIS_PASSWORD}" \
             --set master.persistence.enabled=false \
+            --set image.tag="${REDIS_IMAGE_TAG}" \
             --wait \
             --timeout 10m
           kubectl wait --namespace "${NAMESPACE}" \
