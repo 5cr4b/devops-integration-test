@@ -168,6 +168,7 @@ jobs:
           helm upgrade --install "${POSTGRES_RELEASE_NAME}" bitnami/postgresql \
             --version "${POSTGRES_CHART_VERSION}" \
             --namespace "${NAMESPACE}" \
+            --create-namespace \
             --set auth.database="${POSTGRES_DB}" \
             --set auth.username="${POSTGRES_USER}" \
             --set auth.password="${POSTGRES_PASSWORD}" \
@@ -184,6 +185,7 @@ jobs:
           helm upgrade --install "${REDIS_RELEASE_NAME}" bitnami/redis \
             --version "${REDIS_CHART_VERSION}" \
             --namespace "${NAMESPACE}" \
+            --create-namespace \
             --set architecture=standalone \
             --set auth.password="${REDIS_PASSWORD}" \
             --set master.persistence.enabled=false \
@@ -198,6 +200,7 @@ jobs:
         run: |
           helm upgrade --install "${JOB_RELEASE_NAME}" helm/integration-test \
             --namespace "${NAMESPACE}" \
+            --create-namespace \
             --set image.repository="${IMAGE_NAME%:*}" \
             --set image.tag="${IMAGE_NAME##*:}" \
             --set job.name="${JOB_NAME}" \
