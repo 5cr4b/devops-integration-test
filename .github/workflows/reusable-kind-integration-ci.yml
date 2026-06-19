@@ -161,10 +161,26 @@ jobs:
           docker load -i app-image.tar
           kind load docker-image "${IMAGE_NAME}" --name "${CLUSTER_NAME}"
 
-      - name: Deploy PostgreSQL
+      - name: Pre-pull and load dependency images into Kind
         run: |
           helm repo add bitnami https://charts.bitnami.com/bitnami
           helm repo update
+
+          # Extract image refs from chart templates
+          PG_IMAGES=$(helm template pg bitnami/postgresql --version "${POSTGRES_CHART_VERSION}" \
+            --set auth.password=dummy 2>/dev/null | grep -oP 'image:\s*"\K[^"]+' | sort -u)
+          REDIS_IMAGES=$(helm template rd bitnami/redis --version "${REDIS_CHART_VERSION}" \
+            --set auth.password=dummy --set architecture=standalone 2>/dev/null | grep -oP 'image:\s*"\K[^"]+' | sort -u)
+
+          # Pull on runner (fast — direct Docker Hub access) then load into Kind
+          for img in ${PG_IMAGES} ${REDIS_IMAGES}; do
+            echo "Pulling: ${img}"
+            docker pull "${img}"
+            kind load docker-image "${img}" --name "${CLUSTER_NAME}"
+          done
+
+      - name: Deploy PostgreSQL
+        run: |
           helm upgrade --install "${POSTGRES_RELEASE_NAME}" bitnami/postgresql \
             --version "${POSTGRES_CHART_VERSION}" \
             --namespace "${NAMESPACE}" \
