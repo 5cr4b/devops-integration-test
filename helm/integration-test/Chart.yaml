@@ -1,0 +1,6 @@
+apiVersion: v2
+name: integration-test
+description: Kubernetes Job that validates PostgreSQL and Redis connectivity.
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

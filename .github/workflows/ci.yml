@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      force_fail:
+        description: "Set FORCE_FAIL=true for the integration workload"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  kind-integration-ci:
+    name: Kind Integration CI
+    uses: ./.github/workflows/reusable-kind-integration-ci.yml
+    with:
+      force_fail: ${{ github.event.inputs.force_fail || 'false' }}

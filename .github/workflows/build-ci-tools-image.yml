@@ -1,0 +1,77 @@
+name: Build CI Runner Snapshot
+
+on:
+  workflow_dispatch:
+    inputs:
+      snapshot_image_name:
+        description: "Name of the custom runner image"
+        required: false
+        type: string
+        default: "ci-integration-runner"
+      snapshot_version:
+        description: "Image major version pattern"
+        required: false
+        type: string
+        default: "1.*"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build CI Runner Snapshot
+    runs-on: ubuntu-latest
+    snapshot:
+      image-name: ${{ inputs.snapshot_image_name }}
+      version: ${{ inputs.snapshot_version }}
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@68a526f3c64981693727716d6c74a37a507f21c9 # v5
+        with:
+          fetch-depth: 1
+
+      - name: Load CI env
+        uses: ./.github/actions/load-env
+
+      - name: Install Kind
+        run: |
+          set -euo pipefail
+          curl -fsSL "https://kind.sigs.k8s.io/dl/${KIND_VERSION}/kind-linux-amd64" -o /usr/local/bin/kind
+          chmod +x /usr/local/bin/kind
+
+      - name: Install kubectl
+        run: |
+          set -euo pipefail
+          curl -fsSL "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl" -o /usr/local/bin/kubectl
+          chmod +x /usr/local/bin/kubectl
+
+      - name: Install Helm
+        run: |
+          set -euo pipefail
+          curl -fsSL "https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz" -o /tmp/helm.tar.gz
+          tar -xzf /tmp/helm.tar.gz -C /tmp
+          mv /tmp/linux-amd64/helm /usr/local/bin/helm
+          rm -rf /tmp/helm.tar.gz /tmp/linux-amd64
+
+      - name: Install ShellCheck
+        run: |
+          set -euo pipefail
+          sudo apt-get update && sudo apt-get install -y --no-install-recommends shellcheck
+
+      - name: Pre-warm Kind cluster (caches node image in Docker)
+        run: |
+          set -euo pipefail
+          kind create cluster --name snapshot-warmup --wait 120s
+          kind delete cluster --name snapshot-warmup
+
+      - name: Verify tools
+        run: |
+          echo "=== CI Runner Tool Verification ==="
+          kind version
+          kubectl version --client
+          helm version --short
+          shellcheck --version
+          echo ""
+          echo "=== Pre-cached Docker Images ==="
+          docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}"

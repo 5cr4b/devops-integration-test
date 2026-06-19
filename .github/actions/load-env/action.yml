@@ -1,0 +1,14 @@
+name: Load CI Environment
+description: Load non-secret CI defaults from .env.ci into GITHUB_ENV
+
+runs:
+  using: composite
+  steps:
+    - name: Load .env.ci into environment
+      shell: bash
+      run: |
+        while IFS='=' read -r key value; do
+          if [ -n "${key}" ] && [ "${key#\#}" = "${key}" ]; then
+            echo "${key}=${value}" >> "${GITHUB_ENV}"
+          fi
+        done < .env.ci
